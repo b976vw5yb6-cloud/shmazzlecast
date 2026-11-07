@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><title>sc test</title>
+<body style="background:#111;color:#0f0;font:28px monospace;margin:20px">
+<div id="o">...</div>
+<script>
+const role=new URLSearchParams(location.search).get('r')||'page';
+const L=[]; const out=()=>document.getElementById('o').innerHTML=L.join('<br>');
+const set=(k,v)=>{const i=L.findIndex(x=>x.startsWith(k+':'));const s=k+': '+v;if(i<0)L.push(s);else L[i]=s;out();};
+set('role',role); set('ua',navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0]);
+let ls='?';try{localStorage.setItem('sc-'+role,Date.now());ls=Object.keys(localStorage).filter(k=>k.startsWith('sc-')).join(',')}catch(e){ls='ERR '+e.message}
+set('localStorage keys',ls);
+setInterval(()=>{try{set('ls now',Object.keys(localStorage).filter(k=>k.startsWith('sc-')).join(','))}catch(e){}},2000);
+const bc=new BroadcastChannel('sc-test'); const seen=new Set();
+bc.onmessage=e=>{seen.add(e.data);set('bc heard',[...seen].join(','))};
+setInterval(()=>bc.postMessage(role),1500);
+indexedDB.open('sctest',1).onsuccess=()=>set('idb','ok');
+const tryWs=(k,u)=>{try{const w=new WebSocket(u);w.onopen=()=>set(k,'OPEN');w.onmessage=e=>set(k,'msg '+String(e.data).slice(0,60).replace(/</g,''));w.onerror=()=>set(k,'error');}catch(e){set(k,'EX '+e.message)}};
+tryWs('bridge 8080','ws://127.0.0.1:8080'); tryWs('obs 4466','ws://127.0.0.1:4466');
+set('obsstudio', window.obsstudio ? 'yes '+window.obsstudio.pluginVersion : 'no');
+</script>
